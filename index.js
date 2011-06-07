@@ -36,6 +36,10 @@ GLOBAL.options = {
   insert_data: true
 };
 
+GLOBAL.mysql_user = 'root';
+GLOBAL.mysql_pass = 'root';
+GLOBAL.mysql_database = 'stock';
+
 var argv = process.argv;
 
 for (var i = 0; i < argv.length; i++) {
@@ -309,6 +313,8 @@ function queue(files, callback) {
   q.drain = function() {
     callback();
   };
+  
+  if (files.length == 0) callback();
 }
 
 function unzip(file, directory, callback) {
@@ -446,8 +452,7 @@ async.series([
     
     locations.push({
       'id': 70186,
-      'locationname': 'Bath Volkswagen',
-      'town': 'Bath',
+      'name': 'Bath Volkswagen',
       'telephone': '01225 562079',
       'address': ['Locksbrook Road', '', 'Bath', 'BA1 3EU'],
       'geocode': '51.382426,-2.387236'
@@ -455,8 +460,7 @@ async.series([
   
     locations.push({
       'id': 102950,
-      'locationname': 'Capitol Volkswagen',
-      'town': 'Merthyr Tydfil',
+      'name': 'Capitol Volkswagen',
       'telephone': '01685 350077',
       'address': ['Pentrebach Road', 'Merthyr Tydfil', 'Mid Glamorgan', 'CF48 1YA'],
       'geocode': '51.734075,-3.370167'
@@ -464,81 +468,70 @@ async.series([
   
     locations.push({
       'id': 15843,
-      'locationname': 'Newport Ford',
-      'town': 'Newport',
+      'name': 'Newport Ford',
       'telephone': '01633 730752',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
   
     locations.push({
       'id': 11633,
-      'locationname': 'Mon Motors Chippenham',
-      'town': 'Chippenham',
+      'name': 'Mon Motors Chippenham',
       'telephone': '01249 667765',
       'address': ['Methuen Park', 'Chippenham', 'Wiltshire', 'SN14 0GX'],
     });
   
     locations.push({
       'id': 25708,
-      'locationname': 'Brecon Ford',
-      'town': 'Brecon',
+      'name': 'Brecon Ford',
       'telephone': '01874 622401',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
   
     locations.push({
       'id': 30835,
-      'locationname': 'Cwmbran Ford',
-      'town': 'Cwmbran',
+      'name': 'Cwmbran Ford',
       'telephone': '01633 730746',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
   
     locations.push({
       'id': 41798,
-      'locationname': 'Bath Audi',
-      'town': 'Bath',
+      'name': 'Bath Audi',
       'telephone': '01761 441352',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
   
     locations.push({
       'id': 49286,
-      'locationname': 'Chepstow Ford',
-      'town': 'Chepstow',
+      'name': 'Chepstow Ford',
       'telephone': '01291 661343',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
   
     locations.push({
       'id': 115821,
-      'locationname': 'Bristol Audi',
-      'town': 'Bristol',
+      'name': 'Bristol Audi',
       'telephone': '0117 314 9308',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
   
     locations.push({
       'id': 1026728,
-      'locationname': 'Cardiff Audi',
-      'town': 'Cardiff',
+      'name': 'Cardiff Audi',
       'telephone': '02920 609087',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
   
     locations.push({
       'id': 1598290,
-      'locationname': 'Capitol Skoda',
-      'town': 'Newport',
+      'name': 'Capitol Skoda',
       'telephone': '01633 730742',
       'address': ['Leeway Industrial Estate', 'Leeway', 'Newport', 'NP19 4TS'],
     });
     
-    var dals = new Dals('root', 'root', 'stock');
+    var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
     var query = dals.insert_rows(locations, 'locations');
-    console.log(query);
-    
-    callback();
+    dals.query(query, callback);
   }
 ], function(err) {
   if (err) {

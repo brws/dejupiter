@@ -75,6 +75,43 @@ Dals.prototype.insert_rows = function(object, table) {
   return [query, vals];
 };
 
+Dals.prototype.query = function(query, callback) {
+  var self = this;
+  
+  this.connect(function() {
+    self.mysql.query(query[0], query[1], function(err) {
+      if (err) {
+        console.log('query err: ' + err);
+        callback();
+      } else {
+        callback();
+      }
+    });
+  });
+};
+
+Dals.prototype.connect = function(callback) {
+  var self = this;
+  
+  if (self.connected == true) {
+    callback();
+  } else {
+    self.mysql.user = self.user;
+    self.mysql.password = self.pass;
+    self.mysql.connect(function () {
+      self.mysql.query('use `'+self.database+'`;', function(err) {
+        if (err) {
+          console.log('err: ' + err);
+          process.exit();
+        } else {
+          self.connected = true;
+          callback();
+        }
+      });
+    });
+  }
+};
+
 /**
  * Saves data in record inserts per query.
  * 
@@ -89,25 +126,13 @@ Dals.prototype.save = function(data, records, callback) {
   var self = this;
   
   if (self.connected == false) {
-    self.mysql.user = self.user;
-    self.mysql.password = self.pass;
-    
-    self.mysql.connect(function () {
-      self.mysql.query('use `'+self.database+'`;', function(err) {
-        if (err) {
-          console.log('err: ' + err);
-          process.exit();
-        }
-        console.log('connected to mysql');
-        self.connected = true;
-        self.save(data, records, callback);
-      });
+    this.connect(function() {
+      self.connected = true;
+      self.save(data, records, callback);
     });
   } else {
     if (data.length > 0) {
-      var set = data.splice(0, records);
-      console.log('Inserting ' + set.length + ' record(s)');
-      
+      var set = data.splice(0, records);      
       self.insert(set, function() {
         self.save(data, records, callback);
       });

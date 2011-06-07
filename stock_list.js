@@ -143,7 +143,7 @@ StockList.prototype.save = function(callback) {
   }
   
   if (GLOBAL.options.insert_data) {
-    var dals = new Dals('stock', 'root', 'root');
+    var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
     dals.save(stock, 100, callback);
   } else {
     console.log('Not inserting data. Problem?');
