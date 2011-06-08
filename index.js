@@ -218,7 +218,7 @@ function parse_progress(data, callback) {
  *  image handling functions (either to move them or to download them).
  */
 function consume(file, callback) {
-  var reader = csv.createCsvFileReader(file[0] + '/' + file[1], {columnsFromHeader: true});
+  var reader = csv.createCsvFileReader(__dirname + '/' + file[0] + '/' + file[1], {columnsFromHeader: true});
   reader.on('data', function(data) {
     
     var record_added = records.add(data);
@@ -256,7 +256,7 @@ function consume(file, callback) {
  *  This function does the actual grunt work of resizing the images with the imagemagick module.
  */
 function copy_resize_image(filename, callback, size) {
-  var dest = './images/'+size+'/';
+  var dest = __dirname + '/images/'+size+'/';
     
   var sizes = {
     't': {width: 140, height: 90},
@@ -315,7 +315,7 @@ function queue(files, callback) {
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
     
-    q.push({filename: './images/f/' + file});
+    q.push({filename: __dirname + '/images/f/' + file});
   }
   
   q.drain = function() {
@@ -407,7 +407,7 @@ async.series([
     if (!options.use_progress) {
       callback();
     } else {
-      fs.readFile('./progress/Progress.xml', 'utf8', function(err, data) {
+      fs.readFile(__dirname + '/progress/Progress.xml', 'utf8', function(err, data) {
         if (err) {
           callback(err);
         } else {
@@ -441,7 +441,7 @@ async.series([
     if (!options.generate_thumbnails) {
       callback();
     } else {
-      fs.readdir('./images/f', function(err, files) {
+      fs.readdir(__dirname + '/images/f', function(err, files) {
         if (err) {
           callback(err);
         } else {
