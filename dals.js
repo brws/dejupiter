@@ -75,18 +75,37 @@ Dals.prototype.insert_rows = function(object, table) {
   return [query, vals];
 };
 
+Dals.prototype.query_callback = function(err, results, callback) {  
+  if (err) {
+    console.log('Query Error: ' + err);
+    callback(err);
+  } else {
+    if (results.length > 0) {
+      callback(results);
+    } else {
+      callback();
+    }
+  }
+};
+
 Dals.prototype.query = function(query, callback) {
   var self = this;
   
+  console.log('Executing Query ' + query[0]);
+  
   this.connect(function() {
-    self.mysql.query(query[0], query[1], function(err) {
-      if (err) {
-        console.log('query err: ' + err);
-        callback();
-      } else {
-        callback();
-      }
-    });
+    console.log('Continuing...');
+    if (query.length == 1) {
+      self.mysql.query(query[0], function(err, results) {
+        if (!results) results = [];
+        self.query_callback(err, results, callback);
+      });
+    } else {
+      self.mysql.query(query[0], query[1], function(err, results) {
+        if (!results) results = [];
+        self.query_callback(err, results, callback);
+      });
+    }
   });
 };
 
@@ -101,10 +120,11 @@ Dals.prototype.connect = function(callback) {
     self.mysql.connect(function () {
       self.mysql.query('use `'+self.database+'`;', function(err) {
         if (err) {
-          console.log('err: ' + err);
+          console.log('Connection Error: ' + err);
           process.exit();
         } else {
           self.connected = true;
+          console.log('Connected to MySQL');
           callback();
         }
       });

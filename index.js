@@ -40,6 +40,10 @@ GLOBAL.mysql_user = 'root';
 GLOBAL.mysql_pass = 'root';
 GLOBAL.mysql_database = 'stock';
 
+GLOBAL.statistics = {};
+GLOBAL.statistics.duplicates = [];
+GLOBAL.statistics.errors = [];
+
 var argv = process.argv;
 
 for (var i = 0; i < argv.length; i++) {
@@ -187,6 +191,7 @@ function parse_progress(data, callback) {
       
       if (record_added[0] == false) {
         console.log('Tried to add a duplicate car: ' + record_added[1].FullRegistration);
+        GLOBAL.statistics.duplicates.push(record_added[1].FullRegistration);
       }
       
       var picrefs = d.PictureRefs.split(',');
@@ -220,6 +225,7 @@ function consume(file, callback) {
     
     if (record_added[0] == false) {
       console.log('Tried to add a duplicate car: ' + record_added[1].FullRegistration);
+      GLOBAL.statistics.duplicates.push(record_added[1].FullRegistration);
     }
     
     try {
@@ -299,8 +305,10 @@ function generate(task, callback) {
 }
 
 function queue(files, callback) {
+  GLOBAL.statistics.thumbnails = files.length;
+  GLOBAL.statistics.ratio = Math.round((files.length / records.length()) * 100);
   console.log('Queueing ' + files.length + ' file(s) for thumbnail generation');
-  console.log('That\'s an image ratio of ' + Math.round((files.length / records.length()) * 100) + '% by the way.');
+  console.log('That\'s an image ratio of ' + GLOBAL.statistics.ratio + '% by the way.');
   
   var q = async.queue(generate, 20);
   
@@ -346,6 +354,8 @@ function unzip(file, directory, callback) {
     }
   });
 }
+
+GLOBAL.statistics.start = new Date().getTime();
 
 async.series([
   function(callback) {
@@ -411,6 +421,7 @@ async.series([
     if (!options.download_images) {
       callback();
     } else {
+      GLOBAL.statistics.download_count = todownload.length;
       console.log('Downloading ' + todownload.length + ' stock photo(s)');
       download(todownload, callback);
     }
@@ -420,6 +431,7 @@ async.series([
     if (!options.move_images) {
       callback();
     } else {
+      GLOBAL.statistics.move_count = tomove.length;
       console.log('Moving ' + tomove.length + ' stock photo(s)');
       move_files(tomove, callback);
     }
@@ -440,14 +452,19 @@ async.series([
   },
   
   function(callback) { // clear all images/options
+    Dals = require('./dals');
+    
     var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
     
-    dals.query(['DELETE FROM options WHERE 1=?', 1], function() {
-      dals.query(['DELETE FROM images WHERE 1=?', 1], callback);
+    dals.query(['TRUNCATE `extra`;'], function() {
+      dals.query(['TRUNCATE `options`;'], function() {
+        dals.query(['TRUNCATE `images`;'], callback);
+      });
     });
   },
   
   function(callback) {
+    console.log('Inserting records');
     records.save(callback);
   },
   
@@ -539,7 +556,47 @@ async.series([
     
     var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
     var query = dals.insert_rows(locations, 'locations');
-    dals.query(query, callback);
+    
+    dals.query(query, function(err) {
+      if (err) {
+        GLOBAL.statistics.errors.push(err.message);
+        callback();
+      } else {
+        callback();
+      }
+    });
+  },
+  
+  function(callback) {
+    GLOBAL.statistics.end = new Date().getTime();
+    
+    var mailer = require('mailer');
+    
+    mailer.send({
+      ssl: true,
+      host: 'auth.smtp.1and1.co.uk',
+      port: 465,
+      domain: 'alpha.monmotors.com',
+      to: 'robin@bluerewards.co.uk',
+      from: 'root@alpha.monmotors.com',
+      subject: 'Stock System Import - ' + new Date().toDateString(),
+      template: __dirname + '/email_template.txt',
+      data: {
+        duplicates: GLOBAL.statistics.duplicates.join('\n'),
+        errors: GLOBAL.statistics.errors.join('\n'),
+        time: ((GLOBAL.statistics.end - GLOBAL.statistics.start) / 1000) / 60,
+        records: GLOBAL.statistics.records+0,
+        moved: GLOBAL.statistics.move_count+0,
+        downloaded: GLOBAL.statistics.download_count+0,
+        date: new Date().toDateString()
+      },
+      authentication: "login",
+      username: "root@alpha.monmotors.com",
+      password: "capitol99"
+    }, function(err, result) {
+      if (err) console.log('Couldn\'t send email. ' + err);
+      callback();
+    });
   }
 ], function(err) {
   if (err) {
