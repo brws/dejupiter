@@ -369,7 +369,7 @@ async.series([
   
   function(callback) {
     imports.forEach(function(dir, index) {
-      fs.readdir(dir, function(err, files) {
+      fs.readdir(__dirname + '/' + dir, function(err, files) {
         files.forEach(function(file) {
           if (file.substr(-3) == types[index]) {
             process_files.push([dir, file]);
