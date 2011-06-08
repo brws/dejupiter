@@ -5,6 +5,7 @@ var fs      = require('fs');
 var path    = require('path');
 var spawn   = require('child_process').spawn;
 var async   = require('async');
+var im      = require('imagemagick');
 
 // classes
 
@@ -258,7 +259,7 @@ function copy_resize_image(filename, callback, size) {
   var dest = __dirname + '/images/'+size+'/';
     
   var sizes = {
-    't': {width: 140, height: 90},
+    't': {width: 140, height: 105},
     's': {width: 80, height: 57},
     'l': {width: 290, height: 190},
   };
