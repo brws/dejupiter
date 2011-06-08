@@ -1,0 +1,18 @@
+Hello.<br />
+<br />
+Stock Import on {{date}} completed.<br />
+<br />
+{{moved}} image(s) were moved.<br />
+{{downloaded}} image(s) were downloaded.<br />
+<br />
+Duplicates list:<br />
+{{duplicates}}<br />
+<br />
+Error list:<br />
+{{errors}}<br />
+<br />
+Time taken: {{time}} minute(s).<br />
+<br />
+Regards,<br />
+<br />
+Mon Motors Alpha Server.
