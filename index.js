@@ -102,13 +102,13 @@ function download(images, callback) {
     } else {
       var left = images.splice(0, 6);
           
-      options = [process.cwd() + '/slave.js', process.cwd() + '/images/f'];
+      options = [__dirname + '/slave.js', __dirname + '/images/f'];
       options = options.concat(left);
         
       children++;
       
       var slave = spawn('/usr/local/bin/node', options, {
-        cwd: process.cwd(),
+        cwd: __dirname,
         env: process.env,
         customFds: [-1, -1, -1],
         setsid: false
@@ -133,11 +133,11 @@ function download(images, callback) {
  */
 function move_files(files, callback) {
   async.forEachSeries(files, function(file, cb) {
-    path.exists(process.cwd() + '/images/f/' + file[1], function(exists) {
+    path.exists(__dirname + '/images/f/' + file[1], function(exists) {
       if (exists) {
         cb();
       } else {
-        fs.rename(process.cwd() + '/' + file[0] + '/' + file[1], process.cwd() + '/images/f/' + file[1], cb);
+        fs.rename(__dirname + '/' + file[0] + '/' + file[1], __dirname + '/images/f/' + file[1], cb);
       }
     });
     
@@ -326,7 +326,7 @@ function queue(files, callback) {
 }
 
 function unzip(file, directory, callback) {
-  var unzip = spawn('unzip', ['-o', file, '-d', process.cwd() + '/' + directory]);
+  var unzip = spawn('unzip', ['-o', file, '-d', __dirname + '/' + directory]);
   
   var files = [];
   
@@ -363,7 +363,7 @@ async.series([
       callback();
     } else {
       console.log('Unzipping portfolio\'s feed.');
-      unzip(process.cwd() + '/portfolio/*.zip', 'portfolio', callback);
+      unzip(__dirname + '/portfolio/*.zip', 'portfolio', callback);
     }
   },
   
@@ -398,7 +398,7 @@ async.series([
     } else {
       console.log('Beligerantly feeding in Progress\' stock list because we have to.. for now.');
       console.log('Just unzipping the behemoth as we speak..');
-      unzip(process.cwd() + '/progress/*.zip', 'progress', callback);
+      unzip(__dirname + '/progress/*.zip', 'progress', callback);
     }
   },
   
