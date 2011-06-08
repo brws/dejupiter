@@ -5,7 +5,6 @@ var fs      = require('fs');
 var path    = require('path');
 var spawn   = require('child_process').spawn;
 var async   = require('async');
-var im      = require('imagemagick');
 
 // classes
 
@@ -577,7 +576,7 @@ async.series([
       host: 'auth.smtp.1and1.co.uk',
       port: 465,
       domain: 'alpha.monmotors.com',
-      to: 'robin@bluerewards.co.uk',
+      to: 'robin@bluerewards.co.uk, robin.duckett@monmotors.com',
       from: 'root@alpha.monmotors.com',
       subject: 'Stock System Import - ' + new Date().toDateString(),
       template: __dirname + '/email_template.txt',
