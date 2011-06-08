@@ -439,6 +439,14 @@ async.series([
     }
   },
   
+  function(callback) { // clear all images/options
+    var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
+    
+    dals.query(['DELETE FROM options WHERE 1=?', 1], function() {
+      dals.query(['DELETE FROM images WHERE 1=?', 1], callback);
+    });
+  },
+  
   function(callback) {
     records.save(callback);
   },
