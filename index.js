@@ -576,7 +576,7 @@ async.series([
       host: 'auth.smtp.1and1.co.uk',
       port: 465,
       domain: 'alpha.monmotors.com',
-      to: 'robin@bluerewards.co.uk, robin.duckett@monmotors.com',
+      to: 'robin@bluerewards.co.uk, gareth.rosser@monmotors.com',
       from: 'root@alpha.monmotors.com',
       subject: 'Stock System Import - ' + new Date().toDateString(),
       template: __dirname + '/email_template.txt',
