@@ -87,8 +87,6 @@ Dals.prototype.insert_rows = function(object, table) {
   }
   
   query += valp.join(', ') + dups + ';';
-  console.log(query);
-  //process.exit();
   
   return [query, vals];
 };
@@ -109,10 +107,7 @@ Dals.prototype.query_callback = function(err, results, callback) {
 Dals.prototype.query = function(query, callback) {
   var self = this;
   
-  console.log('Executing Query ' + query[0]);
-  
   this.connect(function() {
-    console.log('Continuing...');
     if (query.length == 1) {
       self.mysql.query(query[0], function(err, results) {
         if (!results) results = [];
@@ -142,7 +137,6 @@ Dals.prototype.connect = function(callback) {
           process.exit();
         } else {
           self.connected = true;
-          console.log('Connected to MySQL');
           callback();
         }
       });

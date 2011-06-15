@@ -53,44 +53,52 @@ StockList.prototype.length = function() {
 StockList.prototype.get_experian_data = function(data, callback) {
  var ac = new Autocheck('CASOLUTIONSUAT', 'GZ0XWTYH');
  var async = require('async');
+ var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
  
  var index = 0;
  
  async.forEachSeries(data, function(item, cb) {
-   if (item.cars.registration != 'Motability') {
-     ac.request({
-       transactiontype: '03',
-       vrm: item.cars.registration,
-       capid: 1,
-     }, function(err, res) {
-       if (err) {
-         console.log(err.message);
+   dals.query(["SELECT * FROM `extra` WHERE stock_id = ?", [item.cars.id]], function(results) {
+     if (results.length >= 1 && (!!results[0].co2 && results[0].co2.length || !!results[0].vin && results[0].vin.length)) {
+       index++;
+       cb();
+     } else {
+       if (item.cars.registration != 'Motability') {
+         ac.request({
+           transactiontype: '03',
+           vrm: item.cars.registration,
+           capid: 1,
+         }, function(err, res) {
+           if (err) {
+             console.log(err.message);
+           } else {
+             if (!!res.request.mb01) {
+               console.log('Got VIN: ' + res.request.mb01.vinserialnumber);
+               console.log('Got CO2: ' + res.request.mb01.co2emissions);
+               
+               data[index].extra.co2 = res.request.mb01.co2emissions;
+               data[index].extra.vin = res.request.mb01.vinserialnumber;
+             } else {
+               console.log(res.request);
+             }
+             
+             if (!!res.request.mb34) {
+               console.log('Got CAPID: ' + res.request.mb34.capid);
+               data[index].extra.capid = res.request.mb34.capid;
+             } else {
+               console.log(res.request);
+             }
+      
+             index++;
+             cb();
+           }
+         });
        } else {
-         if (!!res.request.mb01) {
-           console.log('Got VIN: ' + res.request.mb01.vinserialnumber);
-           console.log('Got CO2: ' + res.request.mb01.co2emissions);
-           
-           data[index].extra.co2 = res.request.mb01.co2emissions;
-           data[index].extra.vin = res.request.mb01.vinserialnumber;
-         } else {
-           console.log(res.request);
-         }
-         
-         if (!!res.request.mb34) {
-           console.log('Got CAPID: ' + res.request.mb34.capid);
-           data[index].extra.capid = res.request.mb34.capid;
-         } else {
-           console.log(res.request);
-         }
-  
-         index++;
+         index++
          cb();
        }
-     });
-   } else {
-     index++
-     cb();
-   }
+     }
+   });
  }, function(err) {
    if (!err) callback(data);
    if (err) console.log(err);
