@@ -33,7 +33,8 @@ GLOBAL.options = {
   download_images: true,
   move_images: true,
   generate_thumbnails: true,
-  insert_data: true
+  insert_data: true,
+  dont_use_experian: true,
 };
 
 GLOBAL.mysql_user = 'root';
@@ -48,7 +49,7 @@ var argv = process.argv;
 
 for (var i = 0; i < argv.length; i++) {
   if (argv[i].substr(0,4) == "--no") {
-    var option = argv[i].substr(5).replace("-", "_");
+    var option = argv[i].substr(5).replace(/-/g, "_");
     
     if (options[option]) {
       options[option] = false;

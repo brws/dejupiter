@@ -220,12 +220,7 @@ StockList.prototype.save = function(callback) {
     stock.push(data);
   }
   
-  console.log('Getting CAP Data');
-  
-  self.get_experian_data(stock, function(capdata) {
-    console.log('Got CAP Data');
-    stock = capdata;
-    
+  if (GLOBAL.options.dont_use_experian == true) {
     if (GLOBAL.options.insert_data) {
       GLOBAL.statistics.records = stock.length;
       var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
@@ -234,7 +229,23 @@ StockList.prototype.save = function(callback) {
       console.log('Not inserting data. Problem?');
       callback();
     }
-  });
+  } else {
+    console.log('Getting Experian Data');
+  
+    self.get_experian_data(stock, function(exdata) {
+      console.log('Got Experian Data');
+      stock = exdata;
+      
+      if (GLOBAL.options.insert_data) {
+        GLOBAL.statistics.records = stock.length;
+        var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
+        dals.save(stock, 100, callback);
+      } else {
+        console.log('Not inserting data. Problem?');
+        callback();
+      }
+    });
+  }
 };
 
 module.exports = StockList;
