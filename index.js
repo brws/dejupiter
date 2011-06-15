@@ -264,7 +264,7 @@ function copy_resize_image(filename, callback, size) {
     'l': {width: 290, height: 190},
   };
   
-  path.exists(dest + '/' + path.basename(filename), function(exists) {
+  path.exists(dest + path.basename(filename), function(exists) {
     if (exists) {
       callback(null, filename);
     } else {
@@ -456,10 +456,8 @@ async.series([
     
     var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
     
-    dals.query(['TRUNCATE `extra`;'], function() {
-      dals.query(['TRUNCATE `options`;'], function() {
-        dals.query(['TRUNCATE `images`;'], callback);
-      });
+    dals.query(['TRUNCATE `options`;'], function() {
+      dals.query(['TRUNCATE `images`;'], callback);
     });
   },
   

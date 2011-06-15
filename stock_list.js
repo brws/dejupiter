@@ -1,5 +1,6 @@
 var url = require('url');
 var path = require('path');
+var Autocheck = require('experian');
 
 Dals = require('./dals');
 
@@ -49,7 +50,70 @@ StockList.prototype.length = function() {
   return this.records.length;
 };
 
+StockList.prototype.get_experian_data = function(data, callback) {
+ var ac = new Autocheck('CASOLUTIONSUAT', 'GZ0XWTYH');
+ var async = require('async');
+ 
+ var index = 0;
+ 
+ async.forEachSeries(data, function(item, cb) {
+   if (item.cars.registration != 'Motability') {
+     ac.request({
+       transactiontype: '03',
+       vrm: item.cars.registration,
+       capid: 1,
+     }, function(err, res) {
+       if (err) {
+         console.log(err.message);
+       } else {
+         if (!!res.request.mb01) {
+           console.log('Got VIN: ' + res.request.mb01.vinserialnumber);
+           console.log('Got CO2: ' + res.request.mb01.co2emissions);
+           
+           data[index].extra.co2 = res.request.mb01.co2emissions;
+           data[index].extra.vin = res.request.mb01.vinserialnumber;
+         } else {
+           console.log(res.request);
+         }
+         
+         if (!!res.request.mb34) {
+           console.log('Got CAPID: ' + res.request.mb34.capid);
+           data[index].extra.capid = res.request.mb34.capid;
+         } else {
+           console.log(res.request);
+         }
+  
+         index++;
+         cb();
+       }
+     });
+   } else {
+     index++
+     cb();
+   }
+ }, function(err) {
+   if (!err) callback(data);
+   if (err) console.log(err);
+ });
+ 
+ /*
+
+  ac.request({
+    capcode: 1,
+    capid: 1,
+    transactiontype: '03',
+    vrm: 'CA09PMY'
+  }, function(err, res) {
+    if (err) {
+      console.log(err.message);
+    } else {
+      console.log('Result: ' + require('util').inspect(res, true, 100));
+    }
+  });*/
+};
+
 StockList.prototype.save = function(callback) {
+  var self = this;
   var stock = [];
   
   for (var i = 0; i < this.records.length; i++) {
@@ -87,18 +151,24 @@ StockList.prototype.save = function(callback) {
     var data = {images: [], options: []};
     
     for (var attr in vehicle) {
-      for (var t in tables) {
-        var table = tables[t];
-        if (!data[t]) data[t] = {};
-        
-        for (var t_attr in table) {
-          if (attr.toLowerCase() == t_attr.toLowerCase()) {
-            if (vehicle[attr] !== undefined
-                && JSON.stringify(vehicle[attr]) !== '{}'
-                && vehicle[attr] !== '"') {
-              data[t][table[t_attr]] = vehicle[attr];
-            } else {
-              data[t][table[t_attr]] = 'NULL';
+      if (vehicle.hasOwnProperty(attr)) {
+        for (var t in tables) {
+          if (tables.hasOwnProperty(t)) {
+            var table = tables[t];
+            if (!data[t]) data[t] = {};
+            
+            for (var t_attr in table) {
+              if (table.hasOwnProperty(t_attr)) {
+                if (attr.toLowerCase() == t_attr.toLowerCase()) {
+                  if (vehicle[attr] !== undefined
+                      && JSON.stringify(vehicle[attr]) !== '{}'
+                      && vehicle[attr] !== '"') {
+                    data[t][table[t_attr]] = vehicle[attr];
+                  } else {
+                    data[t][table[t_attr]] = 'NULL';
+                  }
+                }
+              }
             }
           }
         }
@@ -138,18 +208,25 @@ StockList.prototype.save = function(callback) {
     options.forEach(function(option) {
       data.options.push({stock_id: data.cars.id, option: option});
     });
-
+    
     stock.push(data);
   }
   
-  if (GLOBAL.options.insert_data) {
-    GLOBAL.statistics.records = stock.length;
-    var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
-    dals.save(stock, 100, callback);
-  } else {
-    console.log('Not inserting data. Problem?');
-    callback();
-  }
+  console.log('Getting CAP Data');
+  
+  self.get_experian_data(stock, function(capdata) {
+    console.log('Got CAP Data');
+    stock = capdata;
+    
+    if (GLOBAL.options.insert_data) {
+      GLOBAL.statistics.records = stock.length;
+      var dals = new Dals(GLOBAL.mysql_database, GLOBAL.mysql_user, GLOBAL.mysql_pass);
+      dals.save(stock, 100, callback);
+    } else {
+      console.log('Not inserting data. Problem?');
+      callback();
+    }
+  });
 };
 
 module.exports = StockList;

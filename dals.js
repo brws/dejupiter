@@ -23,17 +23,19 @@ Dals.prototype.insert = function(set, callback) {
   
   set.forEach(function(record, index) {
     for (var table in record) {
-      var data = record[table];
-      switch (table) {
-        case "options":
-        case "images":
-          data.forEach(function(dat) {
-            inserts[table].push(dat);
-          });
-        break;
-        default:
-          inserts[table].push(data);
-        break;
+      if (record.hasOwnProperty(table)) {
+        var data = record[table];
+        switch (table) {
+          case "options":
+          case "images":
+            data.forEach(function(dat) {
+              inserts[table].push(dat);
+            });
+          break;
+          default:
+            inserts[table].push(data);
+          break;
+        }
       }
     }
   });
@@ -50,9 +52,22 @@ Dals.prototype.insert_rows = function(object, table) {
   var cols = [], vals = [], qs = [], valp = [];
 
   for (var column in object[0]) {
-    cols.push('`'+column+'`');
-    qs.push('?');
+    if (object[0].hasOwnProperty(column)) {
+      cols.push('`'+column+'`');
+      qs.push('?');
+    }
   }
+  
+  var dups = ' ON DUPLICATE KEY UPDATE ';
+  var dupsa = [];
+
+  for (var col in cols) {
+    if (cols.hasOwnProperty(col)) {
+      dupsa.push(cols[col] + '=VALUES('+cols[col]+')');
+    }
+  }
+  
+  dups += dupsa.join(', ');  
   
   query += cols.join(', ') + ') VALUES ';
   
@@ -60,17 +75,20 @@ Dals.prototype.insert_rows = function(object, table) {
     valp.push('(' + qs.join(', ') + ')');
     
     for (var column in object[0]) {
-      var value = (""+object[i][column]).trim();
-      if (value.toLowerCase() == "null" || value == 'undefined' || value == undefined) {
-        vals.push(null);
-      } else {
-        vals.push(value);
+      if (object[0].hasOwnProperty(column)) {
+        var value = (""+object[i][column]).trim();
+        if (value.toLowerCase() == "null" || value == 'undefined' || value == undefined) {
+          vals.push(null);
+        } else {
+          vals.push(value);
+        }
       }
-      
     }
   }
   
-  query += valp.join(', ') + ';';
+  query += valp.join(', ') + dups + ';';
+  console.log(query);
+  //process.exit();
   
   return [query, vals];
 };
